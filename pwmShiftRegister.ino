@@ -1,5 +1,13 @@
+// #include <digital_write_macros.h>
+#include <wiring.h>
+
+#include <digitalWriteFast.h>
+
+
 // This demo does web requests to a fixed IP address, using a fixed gateway.
 // 2010-11-27 <jc@wippler.nl> http://opensource.org/licenses/mit-license.php
+
+
 
 #include <EtherCard.h>
 
@@ -24,7 +32,7 @@ static long timer;
 // 272 is for monochrome 17 * 16 screen
 // 816 is for colour 17 * 16 screen
 
-#define TOTAL_LENGTH 272  // width * height * #of colours
+#define TOTAL_LENGTH 816  // width * height * #of colours
 byte pwmVal[  TOTAL_LENGTH ] ;
 
 unsigned long startFrame       = millis() ; // all units are milliseconds
@@ -33,12 +41,17 @@ unsigned long frameDuration    = 0 ;
 #define BRIGHTNESS_LEVEL_COUNT 7 
 
 
-byte dataPin    = 0 ;
 
-byte clockPin   = 1 ;
+   
+
+#define dataPin     2 ;
+
+#define clockPin    3 ;
 byte clockState = LOW ;
 
-byte latchPin   = 2 ;
+#define latchPin    4 ;
+
+
 
 void outputPwm()
   {
@@ -50,29 +63,34 @@ void outputPwm()
    byte bitPhase = 0 ;
    for( int brightnessLevel = 0 ; brightnessLevel < BRIGHTNESS_LEVEL_COUNT ; brightnessLevel++ )
       {
-       digitalWrite( latchPin, LOW ) ;
+       digitalWriteFast( latchPin, LOW ) ;
         
        byte brightnessTime = ( millis() % frameDuration ) / 256;
        
 
        for( int i = 0 ; i < TOTAL_LENGTH ; i++ )
          {
+           
+          /*
+          // shiftout version
           bitPhase = i % 8 ; 
            
           shiftChunk &=  ~( ( brightnessTime < pwmVal[ i ] ? 0 : 1 ) << bitPhase ) ;
           if( bitPhase == 7  )
             shiftOut( dataPin, clockPin, MSBFIRST, shiftChunk ) ;
-          /*
-          digitalWrite( dataPin, brightnessTime < pwmVal[ i ] ? HIGH : LOW ) ;
+            
+          */
           
-                // I don't know yet how exactly the clock pin should be set, assuming worst case
-          clockState = !clockState ;
-          digitalWrite( clockPin, clockState ) ; 
-          digitalWrite( clockPin, HIGH ) ;*/
+          // digital write version
+          
+          digitalWriteFast( clockPin, LOW ) ; 
+          digitalWriteFast( dataPin, brightnessTime < pwmVal[ i ] ? HIGH : LOW ) ;
+          
+          digitalWriteFast( clockPin, HIGH ) ;
          } 
              
            // I don't know yet how exactly the latch pin should be set, assuming worst case
-       digitalWrite( latchPin, HIGH ) ;
+       digitalWriteFast( latchPin, HIGH ) ;
       } 
   } 
 
@@ -82,10 +100,13 @@ void setupPwmShiftRegisterInterface()
      { 
       pwmVal[ i ] = 0 ;
      }
-    
-   pinMode( dataPin,  OUTPUT ) ;      
-   pinMode( clockPin, OUTPUT ) ;
-   pinMode( latchPin, OUTPUT ) ;
+     
+     
+
+   pinModeFast( dataPin,  OUTPUT ) ;      
+   pinModeFast( clockPin, OUTPUT ) ;
+   pinModeFast( latchPin, OUTPUT ) ;
+   
   } 
 
 
